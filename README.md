@@ -308,10 +308,6 @@ All dependencies are updated automatically via [Renovate](https://github.com/ren
 - **Healthchecks**: Every container includes a Docker healthcheck.
 - **Provenance**: Build provenance is attested via GitHub Actions, verifiable with `gh attestation verify`.
 
-## Contributing
-
-Issues, suggestions, and pull requests are welcome.
-
 ## Credits
 
 This is an original tool that builds upon [prometheus-plex-exporter](https://github.com/jsclayton/prometheus-plex-exporter).
