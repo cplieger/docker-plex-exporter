@@ -36,7 +36,7 @@ details to WebSocket connection health.
 
 This is a distroless, rootless container running on
 `gcr.io/distroless/static` with no shell or package manager.
-Only two direct Go dependencies: `gorilla/websocket` for the Plex
+Only two direct Go dependencies: `coder/websocket` for the Plex
 notification stream and `prometheus/client_golang` for metrics.
 
 ### Comparison With Upstream
@@ -49,7 +49,7 @@ fork (the actively maintained upstream):
 
 | | Upstream | This Project |
 |---|---|---|
-| **Dependencies** | 5 direct (go-plex-client, zap, multierr, prometheus client, prometheus model) | 2 (gorilla/websocket, prometheus client) |
+| **Dependencies** | 5 direct (go-plex-client, zap, multierr, prometheus client, prometheus model) | 2 (coder/websocket, prometheus client) |
 | **Logging** | uber-go/zap | stdlib `log/slog` (zero dep) |
 | **Plex client** | Vendored fork of go-plex-client (~900+ lines in plex.go alone) | Built-in minimal client (~80 lines) |
 | **Image user** | root | nonroot (UID 65534) |
@@ -288,6 +288,31 @@ alerting.
 | Docker | `/plex-exporter health` | Exit 0 = metrics server running |
 
 
+## Code Quality
+
+| Metric | Value |
+|--------|-------|
+| [Test Coverage](https://go.dev/blog/cover) | 76.3% |
+| Tests | 160 |
+| [Cyclomatic Complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) (avg) | 4.0 |
+| [Cognitive Complexity](https://www.sonarsource.com/docs/CognitiveComplexity.pdf) (avg) | 4.0 |
+| [Mutation Efficacy](https://en.wikipedia.org/wiki/Mutation_testing) | 86.8% (29 runs) |
+| Test Framework | Property-based ([rapid](https://github.com/flyingmutant/rapid)) + table-driven |
+
+Tests cover Prometheus metric collection (all 13 metric descriptors,
+server/library/session metrics, Plex Pass gating), session tracking
+(play/stop/resume lifecycle, concurrent sessions, bandwidth
+accumulation, prune timeouts), transcode detection and subtitle
+classification, library item counting with artist-type fallback,
+bandwidth tracking with boundary conditions, HTTP client retry logic,
+and the full refresh cycle (server info, library items, resources).
+Property-based tests verify invariants across all pure functions.
+
+Not tested: WebSocket connection management, the main event loop,
+and ticker-based refresh scheduling — these are I/O-bound runtime
+paths. WebSocket health is monitored via the
+`plex_websocket_connected` Prometheus metric.
+
 ## Dependencies
 
 All dependencies are updated automatically via [Renovate](https://github.com/renovatebot/renovate) and pinned by digest or version for reproducibility.
@@ -296,8 +321,9 @@ All dependencies are updated automatically via [Renovate](https://github.com/ren
 |------------|---------|--------|
 | golang | `1.26-alpine` | [Go](https://hub.docker.com/_/golang) |
 | gcr.io/distroless/static-debian13 | `nonroot` | [Distroless](https://github.com/GoogleContainerTools/distroless) |
-| github.com/gorilla/websocket | `v1.5.3` | [GitHub](https://github.com/gorilla/websocket) |
+| github.com/coder/websocket | `v1.8.14` | [GitHub](https://github.com/coder/websocket) |
 | github.com/prometheus/client_golang | `v1.23.2` | [GitHub](https://github.com/prometheus/client_golang) |
+| pgregory.net/rapid | `v1.2.0` | [pkg.go.dev](https://pkg.go.dev/pgregory.net/rapid) |
 
 ## Design Principles
 
@@ -322,7 +348,7 @@ This is an original tool that builds upon [prometheus-plex-exporter](https://git
   transcode tracking, and configurable library refresh
 - [Plex Media Server API](https://developer.plex.tv/pms/) — the
   official API documentation
-- [gorilla/websocket](https://github.com/gorilla/websocket) — Go
+- [coder/websocket](https://github.com/coder/websocket) — Go
   WebSocket implementation
 - [prometheus/client_golang](https://github.com/prometheus/client_golang)
   — Prometheus instrumentation library for Go

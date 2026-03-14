@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/coder/websocket"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -34,15 +34,23 @@ const healthFile = "/tmp/.healthy"
 // Response body size limit to prevent OOM on unexpected payloads.
 const maxResponseBody = 10 << 20 // 10 MB
 
+// retryBaseDelay is the base unit for exponential backoff in getWithRetry.
+// Package-level var so tests can override for speed.
+var retryBaseDelay = 100 * time.Millisecond
+
 // Repeated string literals used across the codebase.
 const (
 	valUnknown   = "unknown"
 	valNone      = "none"
+	valFalse     = "false"
 	valPending   = "pending"
 	valTrue      = "true"
 	valTranscode = "transcode"
 	valBurn      = "burn"
 	valCopy      = "copy"
+	valBoth      = "both"
+	valVideo     = "video"
+	valAudio     = "audio"
 
 	libMovie  = "movie"
 	libShow   = "show"
@@ -245,7 +253,7 @@ func (c *plexClient) getWithRetry(ctx context.Context, path string, result any, 
 			return nil
 		}
 		if attempt < maxRetries-1 {
-			delay := time.NewTimer(100 * time.Millisecond * time.Duration(1<<attempt))
+			delay := time.NewTimer(retryBaseDelay * time.Duration(1<<attempt))
 			select {
 			case <-delay.C:
 			case <-ctx.Done():
@@ -786,7 +794,7 @@ func (s *plexServer) Collect(ch chan<- prometheus.Metric) {
 	version := s.version
 	platform := s.platform
 	platformVersion := s.platformVersion
-	plexPass := "false"
+	plexPass := valFalse
 	if s.plexPass {
 		plexPass = valTrue
 	}
@@ -872,7 +880,7 @@ func (s *plexServer) collectSessions(ch chan<- prometheus.Metric, srvName, srvID
 		}
 		subtitle := orDefault(sess.subtitleAction, valNone)
 		location := orDefault(sess.meta.Session.Location, valUnknown)
-		local := "false"
+		local := valFalse
 		if sess.meta.Player.Local {
 			local = valTrue
 		}
@@ -985,23 +993,24 @@ func (s *plexServer) connectAndListen(ctx context.Context) (bool, error) {
 		Host:   s.client.baseURL.Host,
 		Path:   "/:/websockets/notifications",
 	}
-	headers := http.Header{"X-Plex-Token": {s.client.token}}
 
-	dialer := *websocket.DefaultDialer
-	if s.client.httpClient.Transport != nil {
-		if t, ok := s.client.httpClient.Transport.(*http.Transport); ok {
-			dialer.TLSClientConfig = t.TLSClientConfig
-		}
+	opts := &websocket.DialOptions{
+		HTTPHeader: http.Header{"X-Plex-Token": {s.client.token}},
+		HTTPClient: s.client.httpClient,
 	}
 
-	conn, resp, err := dialer.DialContext(ctx, wsURL.String(), headers)
-	if resp != nil {
+	conn, resp, err := websocket.Dial(ctx, wsURL.String(), opts)
+	if resp != nil && resp.Body != nil {
 		resp.Body.Close()
 	}
 	if err != nil {
 		return false, fmt.Errorf("websocket dial: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if closeErr := conn.CloseNow(); closeErr != nil {
+			slog.Debug("websocket close", "error", closeErr)
+		}
+	}()
 
 	s.mu.Lock()
 	s.wsConnected = true
@@ -1009,14 +1018,11 @@ func (s *plexServer) connectAndListen(ctx context.Context) (bool, error) {
 	s.mu.Unlock()
 	slog.Info("websocket connected", "server", serverName, "id", serverID)
 
-	// Close the connection when the context is cancelled.
-	go func() {
-		<-ctx.Done()
-		conn.Close()
-	}()
+	// Limit WebSocket message size to prevent OOM from oversized messages.
+	conn.SetReadLimit(1 << 20) // 1 MB
 
 	for {
-		_, message, readErr := conn.ReadMessage()
+		_, message, readErr := conn.Read(ctx)
 		if readErr != nil {
 			return true, fmt.Errorf("websocket read: %w", readErr)
 		}
@@ -1170,11 +1176,11 @@ func transcodeKind(ts *wsTranscodeSession) string {
 
 	switch {
 	case hasVideo && hasAudio:
-		return "both"
+		return valBoth
 	case hasVideo:
-		return "video"
+		return valVideo
 	case hasAudio:
-		return "audio"
+		return valAudio
 	default:
 		return valNone
 	}
