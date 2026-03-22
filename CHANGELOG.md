@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.03.21-056dff5 (2026-03-22)
+
+### Added
+
+- Enhance HTTP server security and consolidate response types
+
 ## 2026.03.17-edc187a (2026-03-17)
 
 ### Fixed

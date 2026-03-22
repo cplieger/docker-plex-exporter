@@ -335,8 +335,8 @@ read-only Prometheus data (standard for internal exporters).
 **Details for advanced users:** Plex response bodies capped at
 10 MB via `io.LimitReader`. WebSocket messages capped at 1 MB.
 All HTTP clients use explicit 10s timeouts; the metrics server
-sets all five timeouts (`ReadHeaderTimeout`, `ReadTimeout`,
-`WriteTimeout`, `IdleTimeout`, `MaxHeaderBytes`). Rating keys
+sets `ReadHeaderTimeout`, `ReadTimeout`, `WriteTimeout`,
+`IdleTimeout`, and `MaxHeaderBytes` (1 MB). Rating keys
 validated via `strconv.Atoi` before URL construction. Explicit
 `MinVersion: tls.VersionTLS12` set on TLS config. Semgrep flags
 the `/tmp/.healthy` marker and the opt-in TLS skip (both

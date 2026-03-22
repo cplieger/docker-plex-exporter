@@ -112,6 +112,7 @@ func run() int {
 		ReadTimeout:       5 * time.Second,
 		WriteTimeout:      10 * time.Second,
 		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1 MB
 	}
 
 	go func() {
@@ -352,11 +353,8 @@ type sessionMetadata struct {
 	Media            []mediaInfo `json:"Media"`
 }
 
-type sessionsResponse struct {
-	Metadata []sessionMetadata `json:"Metadata"`
-}
-
-type metadataResponse struct {
+// metadataListResponse is shared by /status/sessions and /library/metadata/<id>.
+type metadataListResponse struct {
 	Metadata []sessionMetadata `json:"Metadata"`
 }
 
@@ -1041,7 +1039,7 @@ func (s *plexServer) connectAndListen(ctx context.Context) (bool, error) {
 }
 
 func (s *plexServer) handlePlaying(ctx context.Context, notif wsNotification) {
-	var sessResp mc[sessionsResponse]
+	var sessResp mc[metadataListResponse]
 	if err := s.client.getWithRetry(ctx, "/status/sessions", &sessResp, 3); err != nil {
 		slog.Warn("failed to fetch sessions", "error", err)
 		return
@@ -1066,7 +1064,7 @@ func (s *plexServer) handlePlaying(ctx context.Context, notif wsNotification) {
 			continue
 		}
 
-		var metaResp mc[metadataResponse]
+		var metaResp mc[metadataListResponse]
 		if _, err := strconv.Atoi(n.RatingKey); err != nil {
 			slog.Warn("invalid rating key", "key", n.RatingKey)
 			continue
