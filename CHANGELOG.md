@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026.04.01-878c624 (2026-04-01)
+
+### Added
+
+- Enhance HTTP server security and consolidate response types
+- Add nil check for response body before closing
+- Test(plex-exporter): add property-based and edge case tests
+- Migrate from gorilla to coder websocket library
+- Enhance grafana dashboard layout and add websocket status
+- Add custom prometheus exporter with grafana dashboard
+
+### Fixed
+
+- Enforce minimum TLS version for secure connections
+- Improve library metrics aggregation in dashboard
+- Improve library metrics query and preserve item counts
+- Improve grafana dashboard metric queries
+
+### Changed
+
+- Refactor(plex-exporter): extract boolean string constants
+- Refactor(plex-exporter): extract transcode kind string constants
+- Refactor(plex-exporter): remove unused text config from dashboard panels
+- Refactor(plex-exporter): minify grafana dashboard json and optimize main.go
+- Update metrics port mapping to 9200
+
+### Dependencies
+
+- Update gcr.io/distroless/static-debian13:nonroot docker digest to e3f9456
+- fix(deps): update module github.com/coder/websocket to v1.8.14
+- fix(deps): update plex-exporter updates (#131)
+
 ## 2026.03.21-056dff5 (2026-03-22)
 
 ### Added
