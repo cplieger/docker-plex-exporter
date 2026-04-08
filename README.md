@@ -352,6 +352,7 @@ All dependencies are updated automatically via [Renovate](https://github.com/ren
 | gcr.io/distroless/static-debian13 | `nonroot` | [Distroless](https://github.com/GoogleContainerTools/distroless) |
 | github.com/coder/websocket | `v1.8.14` | [GitHub](https://github.com/coder/websocket) |
 | github.com/prometheus/client_golang | `v1.23.2` | [GitHub](https://github.com/prometheus/client_golang) |
+| github.com/prometheus/client_model | `v0.6.2` | [GitHub](https://github.com/prometheus/client_model) |
 | pgregory.net/rapid | `v1.2.0` | [pkg.go.dev](https://pkg.go.dev/pgregory.net/rapid) |
 
 ## Design Principles
