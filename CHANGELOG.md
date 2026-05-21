@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026.05.19-20790a4 (2026-05-21)
+
+### Added
+
+- Canonical /api/health JSON envelope with ready flag
+- Docs(plex-exporter): add refactor cycle 2 TODO tracking document
+- Refactor to modular internal architecture with interfaces and composition
+- Add file-based healthcheck for distroless container
+- Add file-based healthcheck for distroless containers
+
+### Fixed
+
+- Pick TestToken value that bypasses secret regex
+- Annotate TestToken with REDACTED marker
+- Extract test token and WS notification type constants
+- Refactor health probe to enable unit testing
+- Harden collection, fix metric contracts, bound cardinality
+
+### Security
+
+- Block in-container privilege escalation (security hardening)
+
+### Changed
+
+- Restructure session tracking and test infrastructure
+- Refactor(plex-exporter): consolidate constants, encapsulate mutex, inject configs
+- Refactor(plex-exporter): unexport internal methods and relocate tests to package-level files
+- Move healthcheck to Dockerfile and standardize resource limits
+- Remove outdated port documentation comment
+- Refactor(plex-exporter): reorganize Prometheus collector methods
+- Consolidate bandwidth and bitrate under Resources row
+
+### Dependencies
+
+- Update gcr.io/distroless/static-debian13:nonroot docker digest to 963fa6c
+- Update golang:1.26-alpine docker digest to 91eda97 (#259)
+- Update third-party dependencies
+- fix(deps): update module pgregory.net/rapid to v1.3.0
+
 ## 2026.04.16-2abbed6 (2026-04-17)
 
 ### Dependencies

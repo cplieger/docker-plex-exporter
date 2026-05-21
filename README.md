@@ -54,7 +54,7 @@ fork (the actively maintained upstream):
 | **Plex client** | Vendored fork of go-plex-client (~900+ lines in plex.go alone) | Built-in minimal client (~80 lines) |
 | **Image user** | root | nonroot (UID 65534) |
 | **WebSocket reconnect** | Delegated to go-plex-client (no built-in reconnect) | Automatic with exponential backoff (1s→30s) |
-| **Health check** | None | CLI probe (`/plex-exporter health`) + HTTP `/health` |
+| **Health check** | None | CLI probe (`/plex-exporter health`) + HTTP `/api/health` |
 | **Transcode tracking** | Via vendored client events | Direct WebSocket JSON parsing |
 | **Session bandwidth** | Estimated from bitrates only | Real bandwidth from Plex Session API + estimates |
 | **Go version** | 1.23 | 1.26 |
@@ -109,7 +109,6 @@ services:
     container_name: plex-exporter
     restart: unless-stopped
     user: "1000:1000"  # match your host user
-    mem_limit: 64m
 
     environment:
       TZ: "Europe/Paris"
@@ -118,16 +117,6 @@ services:
 
     ports:
       - "9594:9594"
-
-    healthcheck:
-      test:
-        - CMD
-        - /plex-exporter
-        - health
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
 ```
 
 ## Deployment
@@ -154,12 +143,21 @@ services:
 | `PLEX_SERVER` | Full URL of your Plex Media Server including scheme and port (e.g. `http://192.0.2.100:32400`) | `http://plex:32400` | Yes |
 | `PLEX_TOKEN` | Plex authentication token for the server administrator. Get it from Plex Web → Settings → XML view → myPlexAccessToken | - | Yes |
 
+### Additional Environment Variables
+
+The following optional environment variables are also supported but not included in the compose example above. Add them to your `environment:` block as needed.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LISTEN_ADDRESS` | Address and port for the metrics HTTP server. | `:9594` |
+| `SKIP_TLS_VERIFICATION` | Skip TLS certificate verification for Plex connections. Set to `1` or `true` only when pointing at a Plex server with a self-signed cert on a trusted network. | `false` |
+
 
 ## Ports
 
 | Port | Description |
 |------|-------------|
-| `9594` | Prometheus metrics endpoint (`/metrics`) and health check (`/health`) |
+| `9594` | Prometheus metrics endpoint (`/metrics`) and health check (`/api/health`) |
 
 ## API Reference
 
@@ -168,7 +166,7 @@ services:
 | Endpoint | Method | Description |
 |---|---|---|
 | `/metrics` | GET | Prometheus metrics (see below) |
-| `/health` | GET | Returns `ok` if the metrics server is running |
+| `/api/health` | GET | Returns `{"status":"ok"}` when ready, 503 when starting/stopping |
 
 The CLI health probe (`/plex-exporter health`) checks for a marker
 file and does not require HTTP — it works in distroless containers
@@ -187,6 +185,8 @@ with no shell or curl.
 | `plex_estimated_transmit_bytes_total` | Counter | `server`, `server_id` | Estimated bytes transmitted based on session bitrates. Resets on container restart — indicative only. |
 | `plex_active_transcode_sessions` | Gauge | `server`, `server_id` | Number of active video transcode sessions (from root endpoint, no Plex Pass needed) |
 | `plex_websocket_connected` | Gauge | `server`, `server_id` | WebSocket connection status: `1` = connected, `0` = disconnected |
+| `plex_http_reachable` | Gauge | `server`, `server_id` | HTTP polling reachability: `1` = last refresh succeeded, `0` = failed |
+| `plex_exporter_errors_total` | Counter | `server`, `server_id`, `type` | Exporter error count by type. Types: `refresh`, `websocket_dial`, `websocket_read`, `invalid_message`, `sessions_fetch`, `metadata_fetch`, `invalid_rating_key`, `metrics_server`, `library_items`. |
 
 #### Library Metrics
 
@@ -200,9 +200,10 @@ with no shell or curl.
 
 | Metric | Type | Labels | Description |
 |---|---|---|---|
-| `plex_plays_total` | Counter | `server`, `server_id`, `library`, `library_id`, `library_type`, `media_type`, `title`, `child_title`, `grandchild_title`, `stream_type`, `stream_resolution`, `stream_file_resolution`, `stream_bitrate`, `device`, `device_type`, `user`, `session`, `transcode_type`, `subtitle_action`, `location`, `local` | Active play sessions (1 per session). Removed after 60s of inactivity. |
+| `plex_plays_active` | Gauge | `server`, `server_id`, `library`, `library_id`, `library_type`, `media_type`, `title`, `child_title`, `grandchild_title`, `stream_type`, `stream_resolution`, `stream_file_resolution`, `device`, `device_type`, `user`, `session`, `transcode_type`, `subtitle_action`, `location`, `local` | Currently active play sessions (1 per session). Use `count(plex_plays_active)` for total stream count. Removed after 60s of inactivity. |
 | `plex_play_seconds_total` | Counter | *(same as above)* | Cumulative play time for the session (seconds) |
 | `plex_session_bandwidth_kbps` | Gauge | `server`, `server_id`, `session`, `user`, `location` | Real-time session bandwidth from the Plex Sessions API (kbps) |
+| `plex_session_bitrate_kbps` | Gauge | `server`, `server_id`, `session`, `user`, `location` | Live stream bitrate per session (kbps). Replaces the former `stream_bitrate` label on `plex_plays_active`/`plex_play_seconds_total`, which caused unbounded cardinality as Plex reports changing bitrates during adaptive streaming. |
 
 #### Session Label Reference
 
@@ -292,10 +293,10 @@ alerting.
 
 | Metric | Value |
 |--------|-------|
-| [Test Coverage](https://go.dev/blog/cover) | 76.3% |
-| Tests | 160 |
+| [Test Coverage](https://go.dev/blog/cover) | 81.6% |
+| Tests | 188 |
 | [Cyclomatic Complexity](https://en.wikipedia.org/wiki/Cyclomatic_complexity) (avg) | 4.0 |
-| [Cognitive Complexity](https://www.sonarsource.com/docs/CognitiveComplexity.pdf) (avg) | 4.0 |
+| [Cognitive Complexity](https://www.sonarsource.com/docs/CognitiveComplexity.pdf) (avg) | 3.8 |
 | [Mutation Efficacy](https://en.wikipedia.org/wiki/Mutation_testing) | 87.3% (59 runs) |
 | Test Framework | Property-based ([rapid](https://github.com/flyingmutant/rapid)) + table-driven |
 
@@ -353,7 +354,8 @@ All dependencies are updated automatically via [Renovate](https://github.com/ren
 | github.com/coder/websocket | `v1.8.14` | [GitHub](https://github.com/coder/websocket) |
 | github.com/prometheus/client_golang | `v1.23.2` | [GitHub](https://github.com/prometheus/client_golang) |
 | github.com/prometheus/client_model | `v0.6.2` | [GitHub](https://github.com/prometheus/client_model) |
-| pgregory.net/rapid | `v1.2.0` | [pkg.go.dev](https://pkg.go.dev/pgregory.net/rapid) |
+| golang.org/x/sync | `v0.20.0` | [Go stdlib](https://pkg.go.dev/golang.org/x/sync) |
+| pgregory.net/rapid | `v1.3.0` | [pkg.go.dev](https://pkg.go.dev/pgregory.net/rapid) |
 
 ## Design Principles
 

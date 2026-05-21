@@ -1,20 +1,22 @@
 # check=error=true
-FROM --platform=$BUILDPLATFORM golang:1.26-alpine@sha256:f85330846cde1e57ca9ec309382da3b8e6ae3ab943d2739500e08c86393a21b1 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d AS builder
 ENV GOTOOLCHAIN=auto
 
 WORKDIR /src
 ARG TARGETOS
 ARG TARGETARCH
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
-COPY main.go ./
+RUN go mod download
+COPY *.go ./
+COPY internal/ internal/
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /plex-exporter main.go
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /plex-exporter .
 
-FROM gcr.io/distroless/static-debian13:nonroot@sha256:e3f945647ffb95b5839c07038d64f9811adf17308b9121d8a2b87b6a22a80a39
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:963fa6c544fe5ce420f1f54fb88b6fb01479f054c8056d0f74cc2c6000df5240
 
-COPY --from=builder /plex-exporter /plex-exporter
+COPY --chmod=755 --from=builder /plex-exporter /plex-exporter
 USER nonroot:nonroot
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=15s \
+    CMD ["/plex-exporter", "health"]
 ENTRYPOINT ["/plex-exporter"]

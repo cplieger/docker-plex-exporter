@@ -1,12 +1,13 @@
 module plex-exporter
 
-go 1.26.2
+go 1.26.3
 
 require (
 	github.com/coder/websocket v1.8.14
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	pgregory.net/rapid v1.2.0
+	golang.org/x/sync v0.20.0
+	pgregory.net/rapid v1.3.0
 )
 
 require (

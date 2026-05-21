@@ -4,7 +4,6 @@ services:
     container_name: plex-exporter
     restart: unless-stopped
     user: "1000:1000"  # match your host user
-    mem_limit: 64m
 
     environment:
       TZ: "Europe/Paris"
@@ -13,13 +12,3 @@ services:
 
     ports:
       - "9594:9594"
-
-    healthcheck:
-      test:
-        - CMD
-        - /plex-exporter
-        - health
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
