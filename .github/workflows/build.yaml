@@ -69,8 +69,8 @@ jobs:
             docker.io/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
-            type=raw,value=${{ steps.prep.outputs.tag }}
             type=sha,format=long
+            type=raw,value=${{ steps.prep.outputs.tag }}
 
       - name: Build and push
         id: push
