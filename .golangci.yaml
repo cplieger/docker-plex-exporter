@@ -71,9 +71,3 @@ linters:
           - usetesting
           - noctx
           - revive
-      - text: "G402:"
-        linters:
-          - gosec
-      - path: internal/
-        linters:
-          - goconst
