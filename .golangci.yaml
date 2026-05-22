@@ -1,0 +1,79 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - noctx
+    - gosec
+    - gocritic
+    - revive
+    - goconst
+    - gocyclo
+    - unconvert
+    - unparam
+    - prealloc
+    - wastedassign
+    - intrange
+    - modernize
+    - usestdlibvars
+    - usetesting
+    - perfsprint
+    - misspell
+    - durationcheck
+    - errname
+    - nolintlint
+    - sloglint
+  settings:
+    errcheck:
+      check-type-assertions: true
+    govet:
+      enable-all: true
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+    gocyclo:
+      min-complexity: 18
+    perfsprint:
+      strconcat: false
+    sloglint:
+      kv-only: true
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+  exclusions:
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+      - legacy
+    rules:
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - errcheck
+          - gosec
+          - goconst
+          - gocritic
+          - govet
+          - prealloc
+          - perfsprint
+          - errname
+          - sloglint
+          - unparam
+          - usetesting
+          - noctx
+          - revive
+      - text: "G402:"
+        linters:
+          - gosec
+      - path: internal/
+        linters:
+          - goconst
