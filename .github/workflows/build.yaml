@@ -111,6 +111,14 @@ jobs:
             --type spdxjson \
             "$IMAGE_REF"
 
+      - name: Generate release notes
+        run: |
+          # renovate: datasource=github-releases depName=orhun/git-cliff
+          VERSION=v2.8.0
+          curl -fsSL "https://github.com/orhun/git-cliff/releases/download/${VERSION}/git-cliff-${VERSION#v}-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar xz -C /usr/local/bin --strip-components=1 "git-cliff-${VERSION#v}/git-cliff"
+          git-cliff --latest --strip header > RELEASE_NOTES.md
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -121,7 +129,7 @@ jobs:
           TAG="${VERSION}"
           gh release create "$TAG" \
             --title "$TAG" \
-            --generate-notes \
+            --notes-file RELEASE_NOTES.md \
             sbom.spdx.json
 
       - name: Notify homelab
