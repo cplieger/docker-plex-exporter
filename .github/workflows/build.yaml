@@ -146,6 +146,24 @@ jobs:
             --notes-file RELEASE_NOTES.md \
             sbom.spdx.json
 
+      - name: Sync description to Docker Hub
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REPO_DESC: ${{ github.event.repository.description }}
+        run: |
+          TOKEN=$(curl -fsSL "https://hub.docker.com/v2/users/login/" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg u "$DOCKERHUB_USERNAME" --arg p "$DOCKERHUB_TOKEN" \
+              '{username: $u, password: $p}')" | jq -r .token)
+          curl -fsSL -X PATCH \
+            "https://hub.docker.com/v2/repositories/${DOCKERHUB_USERNAME}/${{ github.event.repository.name }}/" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg d "$REPO_DESC" '{description: $d}')" >/dev/null
+
       - name: Push README to Docker Hub
         if: github.ref == 'refs/heads/main'
         continue-on-error: true
