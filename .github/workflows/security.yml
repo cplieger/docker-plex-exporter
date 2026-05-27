@@ -1,5 +1,16 @@
 name: Security
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - '**/go.mod'
+      - '**/go.sum'
+      - 'package.json'
+      - 'package-lock.json'
+      - '**/package.json'
+      - '**/package-lock.json'
   schedule:
     - cron: '17 5 * * 1'
   workflow_dispatch:
