@@ -151,7 +151,6 @@ jobs:
           VERSION: ${{ steps.prep.outputs.tag }}
           DIGEST: ${{ steps.push.outputs.digest }}
         run: |
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           TAG="${VERSION}"
           gh release create "$TAG" \
             --title "$TAG" \
