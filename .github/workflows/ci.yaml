@@ -113,7 +113,8 @@ jobs:
         continue-on-error: true
         run: |
           (
-            punused ./...
+            output=$(punused ./... 2>&1 | grep -v "file already closed" || true)
+            if [ -n "$output" ]; then echo "$output"; exit 1; fi
           ) || { echo "Unused exported symbols (punused)" >> /tmp/_ci_failures; exit 1; }
 
       - name: Govulncheck
