@@ -66,14 +66,14 @@ jobs:
 
       - name: Upload SARIF — filesystem
         if: always() && hashFiles('trivy-fs.sarif') != ''
-        uses: github/codeql-action/upload-sarif@3599b3baa15b485a2e49ef411a7a4bb2452e7f93 # v3.30.5
+        uses: github/codeql-action/upload-sarif@03e4368ac7daa2bd82b3e85262f3bf87ee112f57 # v3.36.0
         with:
           sarif_file: 'trivy-fs.sarif'
           category: 'trivy-fs'
 
       - name: Upload SARIF — image
         if: always() && hashFiles('trivy-image.sarif') != ''
-        uses: github/codeql-action/upload-sarif@3599b3baa15b485a2e49ef411a7a4bb2452e7f93 # v3.30.5
+        uses: github/codeql-action/upload-sarif@03e4368ac7daa2bd82b3e85262f3bf87ee112f57 # v3.36.0
         with:
           sarif_file: 'trivy-image.sarif'
           category: 'trivy-image'
