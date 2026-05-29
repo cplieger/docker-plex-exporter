@@ -1,0 +1,13 @@
+# CodeQL false-positive / accepted-by-design allowlist for ci-local.
+# Keyed on the SARIF primaryLocationLineHash fingerprint. Every entry
+# requires a `reason`. See tools/scripts/_ci_local.py load_suppressions().
+suppressions:
+  - rule: go/disabled-certificate-check
+    fingerprint: "afc046414289b47e:1"
+    path: internal/plex/client.go
+    reason: >
+      InsecureSkipVerify is gated behind an explicit, opt-in skipTLS flag
+      (SKIP_TLS_VERIFICATION env var) for users running Plex with a
+      self-signed certificate — a common, legitimate homelab setup. TLS
+      verification is ON by default; the user must deliberately disable it.
+      Accepted by design. Dismissed on GitHub Security tab.
