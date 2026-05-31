@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   release:
-    uses: cplieger/ci/.github/workflows/docker-release.yaml@v1
+    uses: cplieger/ci/.github/workflows/docker-release.yaml@8f09bcd5f8ac39bc5059f4c45d3fcb10a1a3b23a # v1
     with:
       registries: "ghcr,dockerhub"
       notify-repo: "cplieger/homelab"
