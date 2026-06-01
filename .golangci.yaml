@@ -41,6 +41,8 @@ linters:
         - performance
     gocyclo:
       min-complexity: 18
+    goconst:
+      ignore-tests: true
     perfsprint:
       strconcat: false
     sloglint:
